@@ -100,6 +100,7 @@ t_phi = np.array(test_2).T
 print(abs(phi_t*t_phi*0.25))
 
 '''
+do we take c = sigma_x + i sigma_y or take c(t) = e^-iHt c e^iHt 
 
 <m_imp> = <phi(t)|m_imp|phi(t)>
 |phi(t)> = e^iH_2t|Gs> where Gs is of H_atomic
