@@ -63,7 +63,7 @@ for ic,c in enumerate([cp,cm]):
     Ge1+=norm**2*func.f(W,a,b**2)
 
 def cost(d_theta):
-    state = QuantumState(nq) #Prepare |00000>
+    state = func.QuantumState(nq) #Prepare |00000>
     circuit = func.circuit_ansatz(nq, norb, d_theta) #Construct quantum circuit
     circuit.update_quantum_state(state) #Operate quantum circuit on state
     return H.get_expectation_value(state).real #Calculate expectation value of Hamiltonian
