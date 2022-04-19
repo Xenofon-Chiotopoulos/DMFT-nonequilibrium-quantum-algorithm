@@ -93,13 +93,19 @@ def time_evolution_imp(sx,sy,dt,nt) :
     t_phi = -1j/4. * (sxxt + syyt + 1j*(sxyt - syxt))
     return phi_t, t_phi
 
-test_1, test_2 = time_evolution_imp(state_X, state_Y, 1e-2, 1000)
+test_1, test_2 = time_evolution_imp(state_X, state_Y, 1e-2, 10)
 phi_t = np.array(test_1)
-t_phi = np.array(test_2).T
+t_phi = np.array(test_2)
 
-print(abs(phi_t*t_phi*0.25))
+
+print(np.vdot(phi_t,t_phi))
 
 '''
+
+We use 
+H = H_atomic + H_imp
+m_imp = c_up^t c_up + c_down^t c_down
+
 do we take c = sigma_x + i sigma_y or take c(t) = e^-iHt c e^iHt 
 
 <m_imp> = <phi(t)|m_imp|phi(t)>
