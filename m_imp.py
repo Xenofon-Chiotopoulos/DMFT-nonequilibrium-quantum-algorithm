@@ -101,6 +101,7 @@ t_phi = np.array(test_2)
 print(np.vdot(phi_t,t_phi))
 
 '''
+m_imp = 0.5(1+sigma_z)
 
 We use 
 H = H_atomic + H_imp
