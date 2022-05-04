@@ -32,17 +32,18 @@ for i in range(1,norb) :
     e[i,0] = v[i-1] #hopping amplitude between impurity and site i
     e[0,i] = v[i-1]
 
-
-h0,hi =  func.Hed(U,e)
+h0,hi =  func.Hed(U,e_imp)
 h = h0 + hi
 hjw = jordan_wigner(h)
 H_atomic =  create_quantum_operator_from_openfermion_text(f"{hjw}") 
 
-h0_imp,hi_imp =  func.Hed(U,e_imp)
-h_imp = h0_imp + hi_imp + h
+h0_imp,hi_imp =  func.Hed(U,e)
+h_imp = h0_imp + hi_imp 
 hjw_imp = jordan_wigner(h_imp)
 H_imp =  create_quantum_operator_from_openfermion_text(f"{hjw_imp}") 
 
+e,v = eigh(get_sparse_operator(hjw).todense())
+egs = e[0]
 
 def cost(d_theta):
     state = func.QuantumState(nq) #Prepare |00000>
@@ -62,11 +63,8 @@ opt = minimize(cost, d_theta, method=method, callback=lambda x: cost_history.app
 update_theta = opt.x
 
 state_X = func.get_state(update_theta, norb)
-X(0).update_quantum_state(state_X) 
-state_Y = func.get_state(update_theta, norb)
-Y(0).update_quantum_state(state_Y)
 
-def time_evolution_imp(sx,sy,dt,nt) :
+def time_evolution_imp(sx,dt,nt) :
 
     qct = QuantumCircuit(nq)
     for j in range(H_imp.get_term_count()):
@@ -74,31 +72,29 @@ def time_evolution_imp(sx,sy,dt,nt) :
         p.add_operator(H_imp.get_term(j))
         qct.add_observable_rotation_gate(p,-2*dt,1)
 
-    sxxt = np.zeros(nt,dtype = complex)
-    syyt = np.zeros(nt,dtype = complex)
-    sxyt = np.zeros(nt,dtype = complex)
-    syxt = np.zeros(nt,dtype = complex)
-
+    electron_num = []
     wsx = sx.copy() # e^(itH_imp)X|GS>
-    wsy = sy.copy() # e^(itH_imp)X|GS>
     for i in range(nt):
-        sxxt[i] = inner_product(sx,wsx)
-        syxt[i] = inner_product(sy,wsx)
-        sxyt[i] = inner_product(sx,wsy)
-        syyt[i] = inner_product(sy,wsy)
-        
+        p = Observable(nq)
+        p.add_operator(1,"Z 0")
+        #print(p.get_expectation_value(wsx))
+        electron_num.append(p.get_expectation_value(wsx))
         qct.update_quantum_state(wsx)
-        qct.update_quantum_state(wsy)
-    phi_t = -1j/4. * (sxxt + syyt - 1j*(sxyt - syxt))
-    t_phi = -1j/4. * (sxxt + syyt + 1j*(sxyt - syxt))
-    return phi_t, t_phi
+    return electron_num
 
-test_1, test_2 = time_evolution_imp(state_X, state_Y, 1e-2, 10)
-phi_t = np.array(test_1)
-t_phi = np.array(test_2)
+electron_num = time_evolution_imp(state_X, 1e-2, 1000)
+electron_num_1 = time_evolution_imp(state_X, 1e-2, 5000)
+electron_num_iter = [i for i in range(len(electron_num))]
+electron_num_iter_1 = [i for i in range(len(electron_num_1))]
 
+plt.figure(figsize=(18,12))
+plt.subplot(211)
+plt.plot(electron_num_iter,electron_num)
 
-print(np.vdot(phi_t,t_phi))
+plt.subplot(212)
+plt.plot(electron_num_iter_1,electron_num_1)
+plt.show()
+
 
 '''
 m_imp = 0.5(1+sigma_z)
