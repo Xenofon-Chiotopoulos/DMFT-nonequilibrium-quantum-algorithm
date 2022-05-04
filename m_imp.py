@@ -17,7 +17,7 @@ import function_file as func
 norb = 3
 nq = 2*norb
 U = np.zeros((norb,norb))
-U[0,0] = 8
+U[0,0] = 0
 e = np.zeros((norb,norb))
 e_imp = np.zeros((norb,norb))
 e[0,0] = -U[0,0]/2
@@ -61,6 +61,17 @@ method = "BFGS"
 options = {"disp": True, "maxiter": 50, "gtol": 1e-6}
 opt = minimize(cost, d_theta, method=method, callback=lambda x: cost_history.append(cost(x)))
 update_theta = opt.x
+'''
+plt.rcParams["font.size"] = 18
+plt.figure(figsize=(14,8))
+plt.plot((cost_history), color="red", label="VQE")
+#plt.plot(range(len(cost_history)), [molecule.fci_energy]*len(cost_history), linestyle="dashed", color="black", label="Exact Solution")
+plt.xlabel("Iteration")
+plt.ylabel("Error in measurment")
+#plt.yscale('log')
+plt.title('Error in the ground state per iteration')
+plt.legend()
+'''
 
 state_X = func.get_state(update_theta, norb)
 
