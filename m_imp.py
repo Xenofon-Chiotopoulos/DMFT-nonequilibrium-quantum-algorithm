@@ -26,6 +26,7 @@ eb = np.array([-i for i in range(norb-1)])
 v = np.array([2*(i+1) for i  in range(norb-1)])
 v = v/np.sum(v**2)**0.5
 
+
 for i in range(1,norb) :
     e[i,i] = eb[i-1] #energy of bath i
     e_imp[i,i] = eb[i-1]
@@ -51,17 +52,23 @@ def cost(d_theta):
     circuit.update_quantum_state(state) #Operate quantum circuit on state
     return H_atomic.get_expectation_value(state).real #Calculate expectation value of Hamiltonian
 
-dt = np.random.random(nq+ norb * (nq+nq-2))*1e-1
-circ = cost(dt)
+d_theta = np.random.random(nq+ norb * (nq+nq-2))*1e-1
+
+#d_theta = np.empty(36)
+#for i in range(36):
+#    d_theta[i] = 0.1
+
+circ = cost(d_theta)
 cost_history = []
-d_theta = np.random.random(nq+ norb * (nq+nq-2))*1e-2
+#d_theta = np.random.random(nq+ norb * (nq+nq-2))*1e-2
 cost_history.append(cost(d_theta))
-#print(cost_history)
+
 method = "BFGS"
 options = {"disp": True, "maxiter": 50, "gtol": 1e-6}
 opt = minimize(cost, d_theta, method=method, callback=lambda x: cost_history.append(cost(x)))
 update_theta = opt.x
-'''
+
+
 plt.rcParams["font.size"] = 18
 plt.figure(figsize=(14,8))
 plt.plot((cost_history), color="red", label="VQE")
@@ -71,7 +78,7 @@ plt.ylabel("Error in measurment")
 #plt.yscale('log')
 plt.title('Error in the ground state per iteration')
 plt.legend()
-'''
+
 
 state_X = func.get_state(update_theta, norb)
 
@@ -93,20 +100,27 @@ def time_evolution_imp(sx,dt,nt) :
         qct.update_quantum_state(wsx)
     return electron_num
 
-electron_num = time_evolution_imp(state_X, 1e-2, 1000)
-electron_num_1 = time_evolution_imp(state_X, 1e-2, 5000)
+electron_num = time_evolution_imp(state_X, 1e-3, 1000)
+electron_num_1 = time_evolution_imp(state_X, 1e-2, 1000)
+electron_num_2 = time_evolution_imp(state_X, 1e-1, 1000)
 electron_num_iter = [i for i in range(len(electron_num))]
-electron_num_iter_1 = [i for i in range(len(electron_num_1))]
+#electron_num_iter_1 = [i for i in range(len(electron_num_1))]
 
-plt.figure(figsize=(18,12))
+'''
+plt.figure(figsize=(14,8))
 plt.subplot(211)
-plt.plot(electron_num_iter,electron_num)
+plt.plot(electron_num_iter,test[0])
 
 plt.subplot(212)
-plt.plot(electron_num_iter_1,electron_num_1)
+plt.plot(electron_num_iter,test[1])
+'''
+
+fig, axs = plt.subplots(3, sharex=True, sharey=True)
+fig.suptitle('Testing different time scales')
+axs[0].plot(electron_num_iter,electron_num)
+axs[1].plot(electron_num_iter,electron_num_1)
+axs[2].plot(electron_num_iter,electron_num_2)
 plt.show()
-
-
 '''
 m_imp = 0.5(1+sigma_z)
 
@@ -118,5 +132,4 @@ do we take c = sigma_x + i sigma_y or take c(t) = e^-iHt c e^iHt
 
 <m_imp> = <phi(t)|m_imp|phi(t)>
 |phi(t)> = e^iH_2t|Gs> where Gs is of H_atomic
-
 '''
