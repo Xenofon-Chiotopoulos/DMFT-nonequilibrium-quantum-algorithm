@@ -17,7 +17,7 @@ import function_file as func
 norb = 3
 nq = 2*norb
 U = np.zeros((norb,norb))
-U[0,0] = 0
+U[0,0] = 8
 e = np.zeros((norb,norb))
 e_imp = np.zeros((norb,norb))
 e[0,0] = -U[0,0]/2
@@ -52,35 +52,28 @@ def cost(d_theta):
     circuit.update_quantum_state(state) #Operate quantum circuit on state
     return H_atomic.get_expectation_value(state).real #Calculate expectation value of Hamiltonian
 
-d_theta = np.random.random(nq+ norb * (nq+nq-2))*1e-1
-
 #d_theta = np.empty(36)
 #for i in range(36):
 #    d_theta[i] = 0.1
 
-circ = cost(d_theta)
-cost_history = []
-#d_theta = np.random.random(nq+ norb * (nq+nq-2))*1e-2
-cost_history.append(cost(d_theta))
-
-method = "BFGS"
-options = {"disp": True, "maxiter": 50, "gtol": 1e-6}
-opt = minimize(cost, d_theta, method=method, callback=lambda x: cost_history.append(cost(x)))
-update_theta = opt.x
 
 
-plt.rcParams["font.size"] = 18
-plt.figure(figsize=(14,8))
-plt.plot((cost_history), color="red", label="VQE")
-#plt.plot(range(len(cost_history)), [molecule.fci_energy]*len(cost_history), linestyle="dashed", color="black", label="Exact Solution")
-plt.xlabel("Iteration")
-plt.ylabel("Error in measurment")
-#plt.yscale('log')
-plt.title('Error in the ground state per iteration')
-plt.legend()
+def  vqe(d_theta, norb):
+    circ = cost(d_theta)
+    cost_history = []
+    cost_history.append(cost(d_theta))
+    method = "BFGS"
+    options = {"disp": True, "maxiter": 50, "gtol": 1e-6}
+    opt = minimize(cost, d_theta, method=method, callback=lambda x: cost_history.append(cost(x)))
+    update_theta = opt.x
+    state_X = func.get_state(update_theta, norb)
+    return update_theta, cost_history, state_X
 
-
-state_X = func.get_state(update_theta, norb)
+d_theta = np.random.random(nq+ norb * (nq+nq-2))*1e-1
+d_theta_ = np.random.random(nq+ norb * (nq+nq-2))*1e-1
+print(d_theta-d_theta_)
+update_theta, cost_history, state_X = vqe(d_theta, norb)
+update_theta_, cost_history_, state_X_ = vqe(d_theta_, norb)
 
 def time_evolution_imp(sx,dt,nt) :
 
@@ -100,26 +93,18 @@ def time_evolution_imp(sx,dt,nt) :
         qct.update_quantum_state(wsx)
     return electron_num
 
-electron_num = time_evolution_imp(state_X, 1e-3, 1000)
-electron_num_1 = time_evolution_imp(state_X, 1e-2, 1000)
-electron_num_2 = time_evolution_imp(state_X, 1e-1, 1000)
+electron_num = time_evolution_imp(state_X, 1e-2, 5000)
+electron_num_1 = time_evolution_imp(state_X_, 1e-2, 5000)
 electron_num_iter = [i for i in range(len(electron_num))]
-#electron_num_iter_1 = [i for i in range(len(electron_num_1))]
 
-'''
-plt.figure(figsize=(14,8))
-plt.subplot(211)
-plt.plot(electron_num_iter,test[0])
-
-plt.subplot(212)
-plt.plot(electron_num_iter,test[1])
-'''
-
-fig, axs = plt.subplots(3, sharex=True, sharey=True)
+fig, axs = plt.subplots(2, sharex=False, sharey=False)
 fig.suptitle('Testing different time scales')
-axs[0].plot(electron_num_iter,electron_num)
-axs[1].plot(electron_num_iter,electron_num_1)
-axs[2].plot(electron_num_iter,electron_num_2)
+axs[0].plot(electron_num_iter,electron_num, linestyle="dotted", color="red")
+axs[0].plot(electron_num_iter,electron_num_1, linestyle="dashdot", color="blue")
+plt.title("Time evolution of electron_number")
+axs[1].plot((cost_history), color="red", label="VQE", linestyle="dotted")
+axs[1].plot((cost_history_), color="blue", label="VQE", linestyle="dashdot")
+plt.title("VQE convergence")
 plt.show()
 '''
 m_imp = 0.5(1+sigma_z)
