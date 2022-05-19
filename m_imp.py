@@ -117,7 +117,8 @@ axs[0].plot(electron_num_iter,electron_num_plus_one, linestyle="dashdot", color=
 axs[1].plot(electron_num_iter,electron_num_1_plus_one, linestyle="dashdot", color="blue")
 axs[2].plot(electron_num_iter,electron_num_2_plus_one, linestyle="dashdot", color="blue")
 axs[3].plot(electron_num_iter,electron_num_3_plus_one, linestyle="dashdot", color="blue")
-plt.savefig("m_imp_results/fig.png")
+plt.show()
+#plt.savefig("m_imp_results/fig.png")
 '''
 plt.title("Time evolution of electron_number")
 axs[1].plot((cost_history), color="red", label="VQE", linestyle="dotted")
