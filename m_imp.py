@@ -74,8 +74,8 @@ def time_evolution_imp(sx,dt,nt) :
     wsx = sx.copy() # e^(itH_imp)X|GS>
     for i in range(nt):
         p = Observable(nq)
-        p.add_operator(1,"Z 0")
-        p.add_operator(1,"Z 3")
+        p.add_operator(1,f"Z 0")
+        p.add_operator(1,f"Z {norb}")
         #print(p.get_expectation_value(wsx))
         electron_num.append(p.get_expectation_value(wsx))
         qct.update_quantum_state(wsx)
