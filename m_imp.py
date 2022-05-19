@@ -17,15 +17,14 @@ import function_file as func
 norb = 3
 nq = 2*norb
 U = np.zeros((norb,norb))
-U[0,0] = 8
+U[0,0] = 0
 e = np.zeros((norb,norb))
 e_imp = np.zeros((norb,norb))
 e[0,0] = -U[0,0]/2
 e_imp[0,0] = -U[0,0]/2
-eb = np.array([-i for i in range(norb-1)])
+eb = np.array([1,-1]) # 1 , -1 2 , -2
 v = np.array([2*(i+1) for i  in range(norb-1)])
 v = v/np.sum(v**2)**0.5
-
 
 for i in range(1,norb) :
     e[i,i] = eb[i-1] #energy of bath i
@@ -52,12 +51,6 @@ def cost(d_theta):
     circuit.update_quantum_state(state) #Operate quantum circuit on state
     return H_atomic.get_expectation_value(state).real #Calculate expectation value of Hamiltonian
 
-#d_theta = np.empty(36)
-#for i in range(36):
-#    d_theta[i] = 0.1
-
-
-
 def  vqe(d_theta, norb):
     circ = cost(d_theta)
     cost_history = []
@@ -68,12 +61,6 @@ def  vqe(d_theta, norb):
     update_theta = opt.x
     state_X = func.get_state(update_theta, norb)
     return update_theta, cost_history, state_X
-
-d_theta = np.random.random(nq+ norb * (nq+nq-2))*1e-1
-d_theta_ = np.random.random(nq+ norb * (nq+nq-2))*1e-1
-print(d_theta-d_theta_)
-update_theta, cost_history, state_X = vqe(d_theta, norb)
-update_theta_, cost_history_, state_X_ = vqe(d_theta_, norb)
 
 def time_evolution_imp(sx,dt,nt) :
 
@@ -88,24 +75,56 @@ def time_evolution_imp(sx,dt,nt) :
     for i in range(nt):
         p = Observable(nq)
         p.add_operator(1,"Z 0")
+        p.add_operator(1,"Z 3")
         #print(p.get_expectation_value(wsx))
         electron_num.append(p.get_expectation_value(wsx))
         qct.update_quantum_state(wsx)
     return electron_num
 
-electron_num = time_evolution_imp(state_X, 1e-2, 5000)
-electron_num_1 = time_evolution_imp(state_X_, 1e-2, 5000)
-electron_num_iter = [i for i in range(len(electron_num))]
+d_theta = np.random.random(nq+ norb * (nq+nq-2))*1e-1
+d_theta_ = np.random.random(nq+ norb * (nq+nq-2))*1e-1
+d_theta_1 = np.random.random(nq+ norb * (nq+nq-2))*1e-1
+d_theta_2 = np.random.random(nq+ norb * (nq+nq-2))*1e-1
 
-fig, axs = plt.subplots(2, sharex=False, sharey=False)
+update_theta, cost_history, state_X = vqe(d_theta, norb)
+update_theta_, cost_history_, state_X_ = vqe(d_theta_, norb)
+update_theta_1, cost_history_1, state_X_1 = vqe(d_theta_1, norb)
+update_theta_2, cost_history_2, state_X_2 = vqe(d_theta_2, norb)
+
+electron_num = time_evolution_imp(state_X, 1e-2, 2000)
+electron_num_plus_one = [(1 + i/2) for i in electron_num]
+
+electron_num_1 = time_evolution_imp(state_X_, 1e-2, 2000)
+electron_num_1_plus_one = [(1 + i/2) for i in electron_num_1]
+
+electron_num_2 = time_evolution_imp(state_X_1, 1e-2, 2000)
+electron_num_2_plus_one = [(1 + i/2) for i in electron_num_2]
+
+electron_num_3 = time_evolution_imp(state_X_1, 1e-2, 2000)
+electron_num_3_plus_one = [(1 + i/2) for i in electron_num_3]
+
+
+electron_num_iter = [i for i in range(len(electron_num))]
+'''
+#add (1+sigmaz)/2
+plt.plot(electron_num_iter,electron_num_plus_one, linestyle="dashdot", color="blue")
+plt.title('M_imp plot')
+plt.savefig("m_imp_results/fig5.png")
+'''
+fig, axs = plt.subplots(4, sharex=False, sharey=False)
 fig.suptitle('Testing different time scales')
-axs[0].plot(electron_num_iter,electron_num, linestyle="dotted", color="red")
-axs[0].plot(electron_num_iter,electron_num_1, linestyle="dashdot", color="blue")
+axs[0].plot(electron_num_iter,electron_num_plus_one, linestyle="dashdot", color="blue")
+axs[1].plot(electron_num_iter,electron_num_1_plus_one, linestyle="dashdot", color="blue")
+axs[2].plot(electron_num_iter,electron_num_2_plus_one, linestyle="dashdot", color="blue")
+axs[3].plot(electron_num_iter,electron_num_3_plus_one, linestyle="dashdot", color="blue")
+plt.savefig("m_imp_results/fig.png")
+'''
 plt.title("Time evolution of electron_number")
 axs[1].plot((cost_history), color="red", label="VQE", linestyle="dotted")
 axs[1].plot((cost_history_), color="blue", label="VQE", linestyle="dashdot")
 plt.title("VQE convergence")
-plt.show()
+
+'''
 '''
 m_imp = 0.5(1+sigma_z)
 
