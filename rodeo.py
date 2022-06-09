@@ -12,6 +12,7 @@ import scipy as sci
 from scipy.optimize import minimize
 import math
 import function_file as func
+from qulacs import gate
 
 norb = 2
 nq = 2*norb 
@@ -58,49 +59,82 @@ def rodeo(H, times, Energy, nq, resolution= 0.1):
     qc = QuantumCircuit(nq+1)
     for i in range(len(times)):
         
-        #x_gate = X(index)
-        #x_mat_gate = to_matrix_gate(x_gate)
-        #X_mat_gate.add_control_qubit(1,0)
-        
         qc.add_H_gate(0)
-        #qc.add_X_gate(0)
-        
-        #qs = time_evo_rodeo(H, times[i], resolution, nq, qs)
-        for j in range(H.get_term_count()):
-            p = Observable(nq)
-            p.add_operator(H.get_term(j))
-            print(H.get_term(j).get_coef())
-            #print(p.get_expectation_value(qs))
-            qc.add_observable_rotation_gate(p,-2*resolution,1)
-        for k in range(int(times[i]/resolution)):
-            qc.update_quantum_state(qs)
-        
+        if(times[i] > 0.1):
+            reps = int(times[i]/0.1)
+            for trot_reps in range(reps):
+                for j in range(H.get_term_count()):
+
+                    term = H.get_term(j)
+                    pauli_index = term.get_index_list()
+                    id_index = term.get_pauli_id_list()
+                    ceof = term.get_coef()
+
+                    if pauli_index == [] or id_index == []:
+                        continue
+                    if ceof.imag != 0.0:
+                        raise ValueError('Pauli gates coefficient is imaginary cannot preform real time evolution')
+                        
+                    test_gate_ = gate.PauliRotation( pauli_index, id_index,-2*resolution*ceof.real)
+                    test_gate = gate.to_matrix_gate(test_gate_)
+                    test_gate.add_control_qubit(nq,0)
+                    qc.add_gate(test_gate)
+                for k in range(int(reps/resolution)):
+                    qc.update_quantum_state(qs)
+
+        else:
+            for j in range(H.get_term_count()):
+
+                term = H.get_term(j)
+                pauli_index = term.get_index_list()
+                id_index = term.get_pauli_id_list()
+                ceof = term.get_coef()
+
+                if pauli_index == [] or id_index == []:
+                    continue
+                if ceof.imag != 0.0:
+                    raise ValueError('Pauli gates coefficient is imaginary cannot preform real time evolution')
+                    
+                test_gate_ = gate.PauliRotation( pauli_index, id_index,-2*resolution*ceof.real)
+                test_gate = gate.to_matrix_gate(test_gate_)
+                test_gate.add_control_qubit(nq,0)
+                qc.add_gate(test_gate)
+            for k in range(int(times[i]/resolution)):
+                qc.update_quantum_state(qs)
+            
         qc.add_U1_gate(0, Energy * times[i])
         qc.add_H_gate(0)
-        print(qc)
         qc.update_quantum_state(qs)
-        print(qs.get_zero_probability(0))
         qs_save.append(qs)
-        result.append(qs.get_zero_probability(0))
-        
-    return qs_save, result
+
+    return qs_save
 
 def test_energy_range(min, max, times, spacing = 0.1, resolution = 0.1):
-    result_list = []
     qs_list = []
     Energy = np.linspace(min,max,0.1)
     for i in range(len(Energy)):
-        qs_save, result = rodeo( H, times, Energy, nq, resolution)
-        result_list.append(result)  
+        qs_save, result = rodeo( H, times, Energy, nq, resolution) 
         qs_list.append(qs_save)  
-    return result_list
+    return qs_list
+
+def initialize_random_state(seed, nq):
+    state = QuantumState(nq)
+    state.set_Haar_random_state(seed)
+    return state
 
 test = create_gaussian_values(1,1)
-test_list, result = rodeo( H, [0.5], -4.82842712474619, nq, 0.01)
-print(test_list[0].get_vector())
+test_list = rodeo( H, [0.5], -4.82842712474619, nq, 0.5)
+print(test_list[0].get_vector)
+
 
 #Test area to add control to pauli rotation 
 '''
+for j in range(H.get_term_count()):
+            p = Observable(nq)
+            print(H.get_term(j))
+            p.add_operator(H.get_term(j))
+            qc.add_observable_rotation_gate(p,-2*resolution,1)
+
 qs = QuantumState(2)
 qc = QuantumCircuit(2)
 X_gate = gate.PauliRotation([0,1],[2,3],-2*0.5)
@@ -138,4 +172,21 @@ qs = QuantumState(2)
 qs.set_zero_state()
 qc.update_quantum_state(qs)
 print(qs.get_vector())
+
+
+qs = QuantumState(3)
+qc = QuantumCircuit(3)
+X_gate = gate.PauliRotation([0,1],[2,3],-2*0.5)
+X_mat_gate = gate.to_matrix_gate(X_gate)
+X_mat_gate.add_control_qubit(1,0)
+print(qs.get_vector())
+
+qc.add_gate(X_mat_gate)
+X_mat_gate.update_quantum_state(qs)
+print(qs.get_vector())
+
+qc.add_multi_Pauli_rotation_gate([0,1],[2,3],-2*0.5)
+qc.update_quantum_state(qs)
+print(qs.get_vector())
+
 '''
