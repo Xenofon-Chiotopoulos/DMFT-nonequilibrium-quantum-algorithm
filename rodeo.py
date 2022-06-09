@@ -14,7 +14,7 @@ import math
 import function_file as func
 from qulacs import gate
 
-norb = 2
+norb = 3
 nq = 2*norb 
 U = np.zeros((norb,norb))
 U[0,0] = 8 
@@ -34,7 +34,7 @@ hjw = jordan_wigner(h)
 H =  quantum_operator.create_quantum_operator_from_openfermion_text(f"{hjw}") 
 e,v = eigh(get_sparse_operator(hjw).todense())
 egs = e[0]
-print(egs)
+#print(egs)
 
 def create_gaussian_values(standard_deviation, cycles):
     rand_list = abs(np.random.normal(0.0, standard_deviation, cycles)).tolist()
@@ -54,12 +54,10 @@ def time_evo_rodeo(H, time, resolution, nq, qs):
 
 def rodeo(H, times, Energy, nq, resolution= 0.1):
     qs_save = []
-    result = []
     qs = QuantumState(nq+1)
     qc = QuantumCircuit(nq+1)
-    for i in range(len(times)):
-        
-        qc.add_H_gate(0)
+    for i in range(len(times)): 
+        qc.add_H_gate(nq)
         if(times[i] > 0.1):
             reps = int(times[i]/0.1)
             for trot_reps in range(reps):
@@ -101,30 +99,33 @@ def rodeo(H, times, Energy, nq, resolution= 0.1):
                 qc.add_gate(test_gate)
             for k in range(int(times[i]/resolution)):
                 qc.update_quantum_state(qs)
-            
-        qc.add_U1_gate(0, Energy * times[i])
-        qc.add_H_gate(0)
+        
+        qc.add_U1_gate(nq, Energy * times[i])
+        qc.add_H_gate(nq)
         qc.update_quantum_state(qs)
         qs_save.append(qs)
 
     return qs_save
 
-def test_energy_range(min, max, times, spacing = 0.1, resolution = 0.1):
+def test_energy_range(min, max, times, spacing = 200, resolution = 0.1):
     qs_list = []
-    Energy = np.linspace(min,max,0.1)
+    Energy = np.linspace(min,max,spacing)
     for i in range(len(Energy)):
-        qs_save, result = rodeo( H, times, Energy, nq, resolution) 
+        qs_save = rodeo( H, times, Energy[i], nq, resolution) 
         qs_list.append(qs_save)  
     return qs_list
 
-def initialize_random_state(seed, nq):
+def initialize_random_state(nq):
     state = QuantumState(nq)
-    state.set_Haar_random_state(seed)
+    state.set_Haar_random_state()
     return state
 
 test = create_gaussian_values(1,1)
-test_list = rodeo( H, [0.5], -4.82842712474619, nq, 0.5)
-print(test_list[0].get_vector)
+#test_list = rodeo( H, [0.5], -6.414061586209622, nq, 0.5)
+#print(test_list[0].get_vector)
+test = [0.1]
+res = test_energy_range(-10,10, test)
+
 
 
 #Test area to add control to pauli rotation 

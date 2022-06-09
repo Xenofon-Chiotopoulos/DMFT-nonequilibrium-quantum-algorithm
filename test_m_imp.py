@@ -36,6 +36,10 @@ h0,hi =  func.Hed(U,e_imp)
 h = h0 + hi
 hjw = jordan_wigner(h)
 H_atomic =  create_quantum_operator_from_openfermion_text(f"{hjw}") 
+print(hjw)
+print(H_atomic.get_term_count())
+print(H_atomic.get_qubit_count())
+
 
 h0_imp,hi_imp =  func.Hed(U,e)
 h_imp = h0_imp + hi_imp 
