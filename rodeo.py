@@ -1,4 +1,5 @@
-from cirq import QuantumState
+from ctypes import sizeof
+from cirq import QuantumState, quantum_state
 from pyparsing import quoted_string, quotedString
 from qiskit import QuantumCircuit
 from qulacs import *
@@ -53,16 +54,15 @@ def time_evo_rodeo(H, time, resolution, nq, qs):
     return qs
 
 def rodeo(H, times, Energy, nq, resolution= 0.1):
-    qs_save = []
+    probability_list = []
     qs = QuantumState(nq+1)
     qc = QuantumCircuit(nq+1)
     for i in range(len(times)): 
         qc.add_H_gate(nq)
-        if(times[i] > 0.1):
+        if(times[i] > resolution):
             reps = int(times[i]/0.1)
             for trot_reps in range(reps):
                 for j in range(H.get_term_count()):
-
                     term = H.get_term(j)
                     pauli_index = term.get_index_list()
                     id_index = term.get_pauli_id_list()
@@ -82,7 +82,6 @@ def rodeo(H, times, Energy, nq, resolution= 0.1):
 
         else:
             for j in range(H.get_term_count()):
-
                 term = H.get_term(j)
                 pauli_index = term.get_index_list()
                 id_index = term.get_pauli_id_list()
@@ -103,30 +102,35 @@ def rodeo(H, times, Energy, nq, resolution= 0.1):
         qc.add_U1_gate(nq, Energy * times[i])
         qc.add_H_gate(nq)
         qc.update_quantum_state(qs)
-        qs_save.append(qs)
+        probability_list.append(qs.get_zero_probability(nq))
+        qc.add_P0_gate(nq)
+    return qs, probability_list
 
-    return qs_save
-
-def test_energy_range(min, max, times, spacing = 200, resolution = 0.1):
+def test_energy_range(min, max, times, spacing = 5000, resolution = 0.1):
     qs_list = []
+    prob_list = []
     Energy = np.linspace(min,max,spacing)
     for i in range(len(Energy)):
-        qs_save = rodeo( H, times, Energy[i], nq, resolution) 
-        qs_list.append(qs_save)  
-    return qs_list
+        qs, prob = rodeo( H, times[1:-1], Energy[i], nq, resolution) 
+        qs_list.append(qs)
+        prob_list.append(prob)  
+    return qs_list, prob_list
 
 def initialize_random_state(nq):
-    state = QuantumState(nq)
+    state = QuantumState(nq+1)
     state.set_Haar_random_state()
     return state
 
-test = create_gaussian_values(1,1)
-#test_list = rodeo( H, [0.5], -6.414061586209622, nq, 0.5)
-#print(test_list[0].get_vector)
-test = [0.1]
-res = test_energy_range(-10,10, test)
+test = create_gaussian_values(0.01,10)
+#test_list, res = rodeo( H, [0.1], -6.414061586209622, nq, 0.05)
+#print(res)
+print(test)
+res, prob = test_energy_range(-20,20, test)
 
+W = np.linspace(-20,20,5000)
 
+plt.plot(W,prob)
+plt.show()
 
 #Test area to add control to pauli rotation 
 '''

@@ -158,8 +158,8 @@ def Gwp_Gwh_creation(state_X, state_Y, cost_history, nq, H, dt = 0.5,nt = 20000)
 
     for i in range(1,len(t)-1):
         t[i] = t[i+1]-t[i]
-    t[0] = t[1]
-    t[-1] = t[-2]
+        t[0] = t[1]
+        t[-1] = t[-2]
 
     Gp, Gh = time_evolution_log(state_X,state_Y,t,nt,nq,H) #uncommet for log
     #Gp, Gh = time_evolutionf(state_X,state_Y,dt,nt,nq,H) #original time evo function
