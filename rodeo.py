@@ -57,11 +57,12 @@ def rodeo(H, times, Energy, nq, resolution= 0.1):
     probability_list = []
     qs = QuantumState(nq+1)
     qc = QuantumCircuit(nq+1)
+    qc.add_P0_gate(nq)
     for i in range(len(times)): 
         qc.add_H_gate(nq)
-        if(times[i] > resolution):
-            reps = int(times[i]/0.1)
-            for trot_reps in range(reps):
+        if(times[i] > 0.1):
+            reps = np.arange(0,times[i],0.1)
+            for trot_reps in reps:
                 for j in range(H.get_term_count()):
                     term = H.get_term(j)
                     pauli_index = term.get_index_list()
@@ -77,7 +78,7 @@ def rodeo(H, times, Energy, nq, resolution= 0.1):
                     test_gate = gate.to_matrix_gate(test_gate_)
                     test_gate.add_control_qubit(nq,0)
                     qc.add_gate(test_gate)
-                for k in range(int(reps/resolution)):
+                for k in range(int(trot_reps/resolution)):
                     qc.update_quantum_state(qs)
 
         else:
@@ -103,15 +104,15 @@ def rodeo(H, times, Energy, nq, resolution= 0.1):
         qc.add_H_gate(nq)
         qc.update_quantum_state(qs)
         probability_list.append(qs.get_zero_probability(nq))
-        qc.add_P0_gate(nq)
     return qs, probability_list
 
 def test_energy_range(min, max, times, spacing = 5000, resolution = 0.1):
     qs_list = []
     prob_list = []
     Energy = np.linspace(min,max,spacing)
+    #qs = QuantumState(nq+1)
     for i in range(len(Energy)):
-        qs, prob = rodeo( H, times[1:-1], Energy[i], nq, resolution) 
+        qs, prob = rodeo(H, times[1:-1], Energy[i], nq, resolution) 
         qs_list.append(qs)
         prob_list.append(prob)  
     return qs_list, prob_list
@@ -121,13 +122,11 @@ def initialize_random_state(nq):
     state.set_Haar_random_state()
     return state
 
-test = create_gaussian_values(0.01,10)
+test = create_gaussian_values(0.1,10)
 #test_list, res = rodeo( H, [0.1], -6.414061586209622, nq, 0.05)
-#print(res)
-print(test)
-res, prob = test_energy_range(-20,20, test)
 
-W = np.linspace(-20,20,5000)
+res, prob = test_energy_range(-10,10, test)
+W = np.linspace(-10,10,5000)
 
 plt.plot(W,prob)
 plt.show()
