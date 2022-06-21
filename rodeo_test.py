@@ -16,6 +16,7 @@ import function_file as func
 from qulacs import gate
 
 norb = 2
+#qubit number
 nq = 2*norb 
 U = np.zeros((norb,norb))
 U[0,0] = 8 
@@ -36,73 +37,90 @@ H =  quantum_operator.create_quantum_operator_from_openfermion_text(f"{hjw}")
 e,v = eigh(get_sparse_operator(hjw).todense())
 egs = e[0]
 
+
+#Function that creates the gaussian random values
 def create_gaussian_values(standard_deviation, cycles):
     rand_list = abs(np.random.normal(0.0, standard_deviation, cycles)).tolist()
     return rand_list
 
+#variables that determine the number of energies to test
+spacing = 0.1
+min = -10
+max = 10
+
+#setting the maximum values a trotter evolution is allowed to use
+resolution = 0.1
 
 times = create_gaussian_values(0.1,4)
 print(times)
 qs_list = []
 prob_list = []
-Energy = np.linspace(-10,10,5000)
+Energy = np.arange(min,max,spacing) #range of energies to testd
 
 for k in range(len(Energy)):
     probability_list = []
     qs = QuantumState(nq+1)
-    qs.set_Haar_random_state()
+    #qs.set_Haar_random_state() # random state preperation
     qc = QuantumCircuit(nq+1)
-    qc.add_P0_gate(nq)
+    qc.add_P0_gate(nq) # projection of ancilla qubit to the 0 state
     for i in range(len(times)): 
-        qc.add_H_gate(nq)
-        if(times[i] > 0.1):
-            reps = np.arange(0,times[i],0.1)
+        qc.add_H_gate(nq)   # hadamard gate as seen in paper 
+        if(times[i] > resolution):
+            reps = np.arange(0,times[i],resolution) # breaking down the i'th element of times if it is greater the 0.1 for accurate trotter time evolution
             for trot_reps in reps:
+                #getting hamiltionan terms to input into control gate
                 for j in range(H.get_term_count()):
                     term = H.get_term(j)
                     pauli_index = term.get_index_list()
                     id_index = term.get_pauli_id_list()
                     ceof = term.get_coef()
 
+                    #creating tests for imaginary values and allowing empty pauli indices for the first coeff
                     if pauli_index == [] or id_index == []:
                         continue
                     if ceof.imag != 0.0:
                         raise ValueError('Pauli gates coefficient is imaginary cannot preform real time evolution')
-                        
-                    test_gate_ = gate.PauliRotation( pauli_index, id_index,-2*0.1*ceof.real)
+                    
+                    #creating a pauli rotation gate using the hamiltonian information and adding a control to the ancilla qubit
+                    test_gate_ = gate.PauliRotation( pauli_index, id_index,-2*resolution*ceof.real)
                     test_gate = gate.to_matrix_gate(test_gate_)
                     test_gate.add_control_qubit(nq,0)
                     qc.add_gate(test_gate)
-                for k in range(int(trot_reps/0.1)):
+                #carrying out the trotter time evolution for the requierd steps
+                for k in range(int(trot_reps/resolution)):
                     qc.update_quantum_state(qs)
 
         else:
+            #getting hamiltionan terms to input into control gate
             for j in range(H.get_term_count()):
                 term = H.get_term(j)
                 pauli_index = term.get_index_list()
                 id_index = term.get_pauli_id_list()
                 ceof = term.get_coef()
 
+                #creating tests for imaginary values and allowing empty pauli indices for the first coeff
                 if pauli_index == [] or id_index == []:
                     continue
                 if ceof.imag != 0.0:
                     raise ValueError('Pauli gates coefficient is imaginary cannot preform real time evolution')
-                    
-                test_gate_ = gate.PauliRotation( pauli_index, id_index,-2*0.1*ceof.real)
+                
+                #creating a pauli rotation gate using the hamiltonian information and adding a control to the ancilla qubit
+                test_gate_ = gate.PauliRotation( pauli_index, id_index,-2*resolution*ceof.real)
                 test_gate = gate.to_matrix_gate(test_gate_)
                 test_gate.add_control_qubit(nq,0)
                 qc.add_gate(test_gate)
-            for k in range(int(times[i]/0.1)):
+            #carrying out the trotter time evolution for the requierd steps
+            for k in range(int(times[i]/resolution)):
                 qc.update_quantum_state(qs)
         
-        qc.add_U1_gate(nq, Energy[k] * times[i])
+        qc.add_U1_gate(nq, Energy[k] * times[i]) #phase gate that rotates the ancilla qubit by P(E*T) where T is random time
         qc.add_H_gate(nq)
-        qc.update_quantum_state(qs)
-        probability_list.append(qs.get_zero_probability(nq)) 
+        qc.update_quantum_state(qs) 
+        probability_list.append(qs.get_zero_probability(nq)) #storing the probability that the nq qubit is in the 0 state
         
     qs_list.append(qs)
     prob_list.append(probability_list) 
 
-W = np.linspace(-10,10,5000)
+W = np.arange(min,max,spacing)
 plt.plot(W,prob_list)
 plt.show()
