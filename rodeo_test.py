@@ -15,7 +15,7 @@ import math
 import function_file as func
 from qulacs import gate
 
-norb = 3
+norb = 2
 nq = 2*norb 
 U = np.zeros((norb,norb))
 U[0,0] = 8 
@@ -41,14 +41,16 @@ def create_gaussian_values(standard_deviation, cycles):
     return rand_list
 
 
-times = create_gaussian_values(0.1,10)
+times = create_gaussian_values(0.1,4)
 print(times)
 qs_list = []
 prob_list = []
 Energy = np.linspace(-10,10,5000)
-qs = QuantumState(nq+1)
+
 for k in range(len(Energy)):
     probability_list = []
+    qs = QuantumState(nq+1)
+    qs.set_Haar_random_state()
     qc = QuantumCircuit(nq+1)
     qc.add_P0_gate(nq)
     for i in range(len(times)): 
@@ -97,12 +99,10 @@ for k in range(len(Energy)):
         qc.add_H_gate(nq)
         qc.update_quantum_state(qs)
         probability_list.append(qs.get_zero_probability(nq)) 
-        print(qs.get_zero_probability(nq))
-
+        
     qs_list.append(qs)
     prob_list.append(probability_list) 
 
 W = np.linspace(-10,10,5000)
-
 plt.plot(W,prob_list)
 plt.show()
