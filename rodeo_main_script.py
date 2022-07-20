@@ -18,7 +18,7 @@ import scipy as sci
 from scipy.optimize import minimize
 import math
 from qulacs.gate import *
-import function_file as func
+
 
 def Hed(U, eimp, inv=False):
     """
@@ -108,16 +108,33 @@ cst = float(f"{hjw}".split()[0].split('+')[0].replace('(','').replace('[','').re
 #VQE 
 #-----------------------------------------------------
 
+def min_ansatz(nq,norb, d_theta):
+    circuit =  QuantumCircuit(nq)
+    count = 0
+    for i in range(nq):
+        circuit.add_RY_gate(i,d_theta[count])
+        count += 1
+    return circuit
+
+def min_ansatz_1(nq,norb, d_theta):
+    circuit =  QuantumCircuit(nq+1)
+    count = 0
+    for i in range(nq):
+        circuit.add_RY_gate(i,d_theta[count])
+        count += 1
+
+    return circuit
+
 def cost(d_theta):
     state = QuantumState(nq) #Prepare |00000>
-    circuit = func.min_ansatz(nq, norb, d_theta) #Construct quantum circuit
+    circuit = min_ansatz(nq, norb, d_theta) #Construct quantum circuit
     circuit.update_quantum_state(state) #Operate quantum circuit on state
     return H.get_expectation_value(state).real #Calculate expectation value of Hamiltonian
 
 def get_state(d_theta,norb):
     nq = 2 * norb
     state = QuantumState(nq+1) #Prepare |00000>
-    circuit = func.min_ansatz_1(nq, norb, d_theta) #Construct quantum circuit
+    circuit = min_ansatz_1(nq, norb, d_theta) #Construct quantum circuit
     circuit.update_quantum_state(state) #Operate quantum circuit on state
     return state #Output the current state 
 
