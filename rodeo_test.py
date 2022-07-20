@@ -143,7 +143,7 @@ min = -10
 max = 10
 
 #setting the maximum values a trotter evolution is allowed to use
-resolution = 0.1
+resolution = 0.01
 
 times = create_gaussian_values(10,30)
 #times = [0.1*i for i in range(-30,30)]#create_gaussian_values(1,1)
